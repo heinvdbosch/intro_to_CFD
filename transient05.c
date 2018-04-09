@@ -518,7 +518,7 @@ void ucoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			mus = 0.25*(mueff[I][J] + mueff[I-1][J] + mueff[I][J-1] + mueff[I-1][J-1]);
 			mun = 0.25*(mueff[I][J] + mueff[I-1][J] + mueff[I][J+1] + mueff[I-1][J+1]);
 
-			if(J == 1 ) //|| J==NPJ) /*################ DELETED TOP WALL ######################*/
+			if(J == 1 && (I <= (chim_pos+wall) || I >= (chim_pos+wd+wall)) ) //|| J==NPJ) /*################ DELETED TOP WALL ######################*/
 				{
 				if(yplus[I][J] < 11.63)
 					SP[i][J]= -mu[I][J]*AREAs/(0.5*AREAw);
@@ -550,7 +550,7 @@ void ucoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			aW[i][J] = max3( Fw, Dw + 0.5*Fw, 0.);
 			aE[i][J] = max3(-Fe, De - 0.5*Fe, 0.);
 
-			if (J==1) aS[i][J]=0.;
+			if (J==1 && (I <= (chim_pos+wall) || I >= (chim_pos+wd+wall))) aS[i][J]=0.;
 			else      aS[i][J] = max3( Fs, Ds + 0.5*Fs, 0.);
             
 			//if (J==NPJ) aN[i][J] =0.; /*################ DELETED TOP WALL ######################*/
@@ -976,7 +976,7 @@ void epscoeff(double **aE, double **aW, double **aN, double **aS, double **aP, d
 
 		 /* The source terms */
 
-			if (J==1)//|| J==NPJ) /*################ DELETED TOP WALL ######################*/
+			if (J==1 && (I <= (chim_pos+wall) || I >= (chim_pos+wd+wall)))//|| J==NPJ) /*################ DELETED TOP WALL ######################*/
 				{
 				SP[I][J] = -LARGE;
 				Su[I][J] = pow(Cmu,0.75)*pow(k[I][J],1.5)/(kappa*0.5*AREAw)*LARGE;
@@ -1066,7 +1066,7 @@ void kcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			Dn = mut[I  ][J  ]*mut[I  ][J+1]/sigmak/(mut[I  ][J  ]*(y[J+1] - y_v[j+1]) + mut[I  ][J+1]*(y_v[j+1] - y[J  ]))*AREAn;
 
             /* The source terms */
-            if (J == 1) //|| J == NPJ) /*################ DELETED TOP WALL ######################*/
+            if (J == 1 && (I <= (chim_pos+wall) || I >= (chim_pos+wd+wall))) //|| J == NPJ) /*################ DELETED TOP WALL ######################*/
 				{
 				SP[I][J] = -rho[I][J] * pow(Cmu,0.75) * sqrt(k[I][J]) * uplus[I][J]/(0.5*AREAw) * AREAs * AREAw;
 				Su[I][J] = tw[I][J] * 0.5 * (u[i][J] + u[i+1][J])/(0.5*AREAw) * AREAs * AREAw;
@@ -1084,7 +1084,7 @@ void kcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			aW[I][J] = max3( Fw, Dw + 0.5*Fw, 0.);
 			aE[I][J] = max3(-Fe, De - 0.5*Fe, 0.);
             
-            if (J == 1) aS[i][J] = 0;
+            if (J == 1 && (I <= (chim_pos+wall) || I >= (chim_pos+wd+wall))) aS[i][J] = 0;
 			else        aS[i][J] = max3( Fs, Ds + 0.5*Fs, 0.);
             
 			//if (J == NPJ) aN[i][J] = 0; /*################ DELETED TOP WALL ######################*/
