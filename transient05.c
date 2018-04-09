@@ -551,10 +551,11 @@ void ucoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
                        2./3. * (rho[I][J]*k[I][J] - rho[I-1][J]*k[I-1][J])/(x[I] - x[I-1]);
 			Su[I][j] *= AREAw*AREAs;
 			
-//			/* baffle for chimney */
-//			if (i == CHIMNEY_pos && J < CHIMNEY_h){
-//				SP[i][J] = -LARGE;
-//			}	
+
+			/* baffle for chimney */
+			if (i > 4 && i < 6 && J > 4 && J < 6){
+				SP[i][J] = -LARGE;
+			}	
 //			if (i == CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall  && J < CHIMNEY_h){
 //				SP[i][J] = -LARGE;
 //			}
@@ -664,10 +665,10 @@ void vcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 
 			Su[I][j] *= AREAw*AREAs;
 
-//			/* baffle for chimney */
-//			if (I == CHIMNEY_pos && j < CHIMNEY_h){
-//				SP[I][j] = LARGE;
-//			}
+			/* baffle for chimney */
+			if (I > 4 && I < 6 && j > 4 && j < 6){
+				SP[I][j] = LARGE;
+			}
 //
 //			if (I == CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall  && j < CHIMNEY_h){
 //				SP[I][j] = LARGE;
@@ -919,10 +920,10 @@ void Tcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			aN[I][J] = max3(-Fn, Dn - 0.5*Fn, 0.);
 			aPold    = rho[I][J]*AREAe*AREAn/Dt;
 
-//			if (I > 11*NPI/200 && I < 18*NPI/200 && J > 2*NPJ/5 && J < 3*NPJ/5){
-//				SP[I][J] = -LARGE;
-//				Su[I][J] = LARGE*373.;
-//			}
+			if (I > 4 && I < 6 && J > 4 && J < 6){
+				SP[I][J] = -LARGE;
+				Su[I][J] = LARGE*373.;
+			}
 
 //			if (I >= CHIMNEY_pos && I <= CHIMNEY_pos + CHIMNEY_wall && J <= CHIMNEY_h){
 //				SP[I][J] = -LARGE;
