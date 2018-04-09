@@ -70,7 +70,6 @@ double **d_v;
 
 double m_in;
 double m_out;
-double m_chim;
 
 double *relax;
 
