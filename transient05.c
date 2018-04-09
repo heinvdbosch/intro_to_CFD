@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
 } /* main */
 
-//test
+
 /* ################################################################# */
 void grid(void)
 /* ################################################################# */
@@ -155,9 +155,6 @@ void init(void)
 
 	m_in  = 1.;
 	m_out = 1.;
-	m_chim = 1.;
-
-	
 	Dt    = 1.E-1;
 
 	for (I = 0; I <= NPI + 1; I++) {
@@ -171,11 +168,11 @@ void init(void)
 			T      [I][J] = 273.;     /* Temperature */
 			k      [I][J] = 1e-3;     /* k */
 			eps    [I][J] = 1e-4;     /* epsilon */
-			uplus  [I][J] = 1.;                                            			/* uplus */
+			uplus  [I][J] = 1.;                                            /* uplus */
 			yplus1 [I][J] = sqrt(rho[I][J] * u[I][J] / mu[I][J]) * (y[1] - y[0]);   /* yplus1 */
 			yplus2 [I][J] = sqrt(rho[I][J] * u[I][J] / mu[I][J]) * (y[NPJ+1] - y[NPJ]);   /* yplus2 */
-			yplus  [I][J] = 1.;       /* yplus*/
-			tw     [I][J] = 5.;       /* tw */
+			yplus  [I][J] = 1.;                                            /* yplus*/
+			tw     [I][J] = 5.;                                                /* tw */
 			rho    [I][J] = 1.0;      /* Density */
 			mu     [I][J] = 2.E-5;    /* Viscosity */
 			Cp     [I][J] = 1013.;     /* J/(K*kg) Heat capacity - assumed constant for this problem */
@@ -190,13 +187,12 @@ void init(void)
 		} /* for J */
 	} /* for I */
 
-
 	/* Setting the relaxation parameters */
 
-	relax_u   = 0.8;            /* See eq. 6.36 */
-	relax_v   = relax_u;       	/* See eq. 6.37 */
-	relax_pc  = 1.1 - relax_u; 	/* See eq. 6.33 */
-	relax_T   = 1.0;  			/* Relaxation factor for temperature */
+	relax_u   = 0.001;             /* See eq. 6.36 */
+	relax_v   = relax_u;       /* See eq. 6.37 */
+	relax_pc  = 1.1 - relax_u; /* See eq. 6.33 */
+	relax_T   = 1.0;  /* Relaxation factor for temperature */
 
 } /* init */
 
@@ -207,37 +203,24 @@ void bound(void)
 /***** Purpose: Specify boundary conditions for a calculation ******/
 	int    I, J, j, i;
 
-	/* velocity profile at the inlet */
-//	for (J = 0; J <= NPJ + 1; J++) {
-//		u[1][J] = U_IN; 
-//		u[1][J] = U_IN*1.5*(1.-sqr(2.*(y[J]-YMAX/2.)/YMAX));
-//	} /* for J */
-	
-	/* velocity in the chimney */
-	for (I = CHIMNEY_pos + CHIMNEY_wall; I <= CHIMNEY_pos + CHIMNEY_wall + CHIMNEY_w + 1; I++) {
-		v[I][1] = V_IN*1.5*(1.-sqr(2.*(x[I]-CHIMNEY_w/2.)/CHIMNEY_w)); /* inlet */
-	} /* for I */
+	/* Fixed temperature at the upper and lower wall */
 
-	/* velocity in x direction at the wall */	
-	for (i = 0; i <= NPI + 1; i++) {
-		/* Set velocity at lower boundary to zero */
-		u[i][0] = 0; /* bottom wall */
+	for (J = 0; J <= NPJ + 1; J++) {
+		/* Temperature at the walls in Kelvin */
+		u[1][J] = U_IN; /* inlet */
+//		u[1][J] = U_IN*1.5*(1.-sqr(2.*(y[J]-YMAX/2.)/YMAX)); /* inlet */
 	} /* for J */
 
-	/* Fixed temperatures at the lower wall */
-	for (I=0 ; I <= NPI +1 ; I++) {
-		if  (I >= CHIMNEY_pos && I <= CHIMNEY_pos+CHIMNEY_w + 1) {
-			T[I][0] = 500.; 			/* bottom chimney wall */
-		}
-		else {
-			T[I][0] = 273.; 			/* bottom wall */
-		}
-		}
-		
+	for (I = 0; I <= NPI + 1; I++) {
+		/* Temperature at the walls in Kelvin */
+		T[I][0] = 273.; /* bottom wall */
+		//T[I][NPJ+1] = 273.; /* top wall */     /*############# DELETED TOP WALL ########*/
+	} /* for J */
+
 	globcont();
 
-	/* Velocity and temperature gradient at upper and eastern outlet = zero: */
-	/* Eastern boundary */
+	/* Velocity and temperature gradient at outlet = zero: */
+
 	for (J = 1; J <= NPJ; J++) {
 		j = J;
 		/* Correction factor m_in/m_out is used to satisfy global continuity */
@@ -247,24 +230,29 @@ void bound(void)
 		eps[NPI+1][J] = eps[NPI][J];
 	} /* for J */
 
-	/* Eastern boundary temperature gradient is set to 0 */
+
+
 	for (J = 0; J <= NPJ+1; J++) {
 		T[NPI+1][J] = T[NPI][J];
 	} /* for J */
-
-	/* Upper boundary */
-	for (I = 1; I <= NPI + 1; I++) {
+	
+	/*######################################### START ADDED CODE ###########################################*/
+	for (I = 1; I <= NPI; I++) {
 		i = I;
-		/* Correction factor m_in/m_out is used to satisfy global continuity########################## might need an eddit ###########################################*/
 		u[i][NPJ+1] = u[i][NPJ];
 		v[I][NPJ+1] = v[I][NPJ];
 		k[I][NPJ+1] = k[I][NPJ];
 		eps[I][NPJ+1] = eps[I][NPJ];
-	} /* for J */
+	} /* for I */
+
+	for ( I = 0; I<= NPI+1; I++ ) {
+		T[I][NPJ+1] = T[I][NPJ];
+	} /* for I*/
+	/*######################################### END ADDED CODE ###########################################*/
 	
-	/* Upper boundary temperature gradient is set to 0 */
-	for (I = 0; I <= NPI + 1; I++) {
-		T[I][NPJ+1] = T[I][NPJ]; /* upper boundary */
+	for (J = 0; J <= NPJ + 1; J++) {
+		k[0][J] = 2./3.*sqr(U_IN*Ti); /* inlet */
+		eps[0][J] = pow(Cmu,0.75)*pow(k[0][J],1.5)/(0.07*YMAX*0.5); /* inlet */
 	} /* for J */
 
 } /* bound */
@@ -275,28 +263,20 @@ void globcont(void)
 {
 /***** Purpose: Calculate mass in and out of the calculation domain to ******/
 /*****          correct for the continuity at outlet. ******/
-	int    I, i, J, j;
+	int    J, j;
 	double AREAw;
-	double AREAs;
 
 	conv();
 
 	m_in = 0.;
 	m_out = 0.;
-	m_chim = 0.;
 
 	for (J = 1; J <= NPJ; J++) {
 		j = J;
-		AREAw = y_v[j+1] - y_v[j]; /* See fig. 6.3 */ 
+		AREAw = y_v[j+1] - y_v[j]; /* See fig. 6.3 */
 		m_in  += F_u[1][J]*AREAw;
 		m_out += F_u[NPI][J]*AREAw;
 	} /* for J */
-
-	for (I = CHIMNEY_pos+CHIMNEY_wall; I <= CHIMNEY_pos+CHIMNEY_wall+CHIMNEY_w; I++) {
-		i = I;
-		AREAs = x_u[i+1] - x_u[i]; /* See fig. 6.3 */ 
-		m_chim  += F_v[I][1]*AREAs;
-	} /* for I */
 
 } /* globcont */
 
@@ -538,41 +518,45 @@ void ucoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			mus = 0.25*(mueff[I][J] + mueff[I-1][J] + mueff[I][J-1] + mueff[I-1][J-1]);
 			mun = 0.25*(mueff[I][J] + mueff[I-1][J] + mueff[I][J+1] + mueff[I-1][J+1]);
 
-			if(J == 1 )
+			if(J == 1 ) //|| J==NPJ) /*################ DELETED TOP WALL ######################*/
+				{
 				if(yplus[I][J] < 11.63)
 					SP[i][J]= -mu[I][J]*AREAs/(0.5*AREAw);
 				else
 					SP[i][J]=-rho[I][J] * pow(Cmu, 0.25) * sqrt(k[I][J]) / uplus[I][J] * AREAs;
-			else
+			}
+			else{
 				SP[i][J] = 0.;
+			}
             
 			Su[i][J] = (mueff[I][J]*dudx[I][J] - mueff[I-1][J]*dudx[I-1][J]) / (x[I] - x[I-1]) + 
 			           (mun        *dvdx[i][j+1] - mus        *dvdx[i][j]) / (y_v[j+1] - y_v[j]) -
                        2./3. * (rho[I][J]*k[I][J] - rho[I-1][J]*k[I-1][J])/(x[I] - x[I-1]);
 			Su[I][j] *= AREAw*AREAs;
-			
 
-			/* baffle for chimney */
-			if (i > 4 && i < 6 && J > 4 && J < 6){
+	/* ################################ START ADDED CODE ##############################################*/
+			if ( i > chim_pos && i < (chim_pos+wall) && J < h ) {
 				SP[i][J] = -LARGE;
-			}	
-//			if (i == CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall  && J < CHIMNEY_h){
-//				SP[i][J] = -LARGE;
-//			}
+				Su[i][J] = 0.;
+			}
+
+			if ( i > (chim_pos + wall + wd) && i < (chim_pos + wall + wall + wd) && J < h ) {
+				SP[i][J] = -LARGE;
+				Su[i][J] = 0.;
+			}
+	/* ################################ END ADDED CODE ##############################################*/
+
 
 			/* The coefficients (hybrid differencing sheme) */
 
 			aW[i][J] = max3( Fw, Dw + 0.5*Fw, 0.);
-			
-			if (i == NPI) aE[i][J] = 0.;
-			else 		  aE[i][J] = max3(-Fe, De - 0.5*Fe, 0.);
+			aE[i][J] = max3(-Fe, De - 0.5*Fe, 0.);
 
 			if (J==1) aS[i][J]=0.;
 			else      aS[i][J] = max3( Fs, Ds + 0.5*Fs, 0.);
             
-			//if (J==NPJ) aN[i][J] =0.;
-			//else        
-			
+			//if (J==NPJ) aN[i][J] =0.; /*################ DELETED TOP WALL ######################*/
+			//else         
 			aN[i][J] = max3(-Fn, Dn - 0.5*Fn, 0.);
             
 			aPold    = 0.5*(rho[I-1][J] + rho[I][J])*AREAe*AREAn/Dt;
@@ -656,6 +640,7 @@ void vcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			Dn = mueff[I][J  ]/(y_v[j+1] - y_v[j  ])*AREAn;
 
 			/* The source terms */
+
 			muw = 0.25*(mueff[I][J] + mueff[I-1][J] + mueff[I][J-1] + mueff[I-1][J-1]);
 			mue = 0.25*(mueff[I][J] + mueff[I+1][J] + mueff[I][J-1] + mueff[I+1][J-1]);
 			SP[I][j] = 0.;
@@ -664,25 +649,25 @@ void vcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
                        2./3. * (rho[I][J]*k[I][J] - rho[I][J-1]*k[I][J-1])/(y[J] - y[J-1]); 
 
 			Su[I][j] *= AREAw*AREAs;
-
-			/* baffle for chimney */
-			if (I > 4 && I < 6 && j > 4 && j < 6){
-				SP[I][j] = LARGE;
+/* ##################################### START ADDED CODE ########################################*/
+			if ( I > chim_pos && I < (chim_pos+wall) && j < h ) {
+				SP[I][j] = -LARGE;
+				Su[I][j] = 0.;
 			}
-//
-//			if (I == CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall  && j < CHIMNEY_h){
-//				SP[I][j] = LARGE;
-//			}
-				
+
+
+			if ( I > (chim_pos + wall + wd) && I < (chim_pos + wall + wall + wd) && j < h ) {
+				SP[I][j] = -LARGE;
+				Su[I][j] = 0.;
+			}
+/* ##################################### END ADDED CODE ########################################*/
+
 			/* The coefficients (hybrid differencing scheme) */
 
 			aW[I][j] = max3( Fw, Dw + 0.5*Fw, 0.);
 			aE[I][j] = max3(-Fe, De - 0.5*Fe, 0.);
 			aS[I][j] = max3( Fs, Ds + 0.5*Fs, 0.);
-			
-			if (j == NPJ) aN[I][j] = 0.;
-			else     	  aN[I][j] = max3(-Fn, Dn - 0.5*Fn, 0.);
-			
+			aN[I][j] = max3(-Fn, Dn - 0.5*Fn, 0.);
 			aPold    = 0.5*(rho[I][J-1] + rho[I][J])*AREAe*AREAn/Dt;
 
 			/* eq. 8.31 without time dependent terms (see also eq. 5.14): */
@@ -762,24 +747,12 @@ void pccoeff(double **aE, double **aW, double **aN, double **aS, double **aP, do
 			SSUM    += fabs(b[I][J]);
 			
 			/* The coefficients */
-			
-			if (I == NPI)  {               //        IF STATEMENT ERIN GEZET DOOR HEIN!!!!!!!!!!!!!      //
-				aE[I][J] = 0.;
-			}
-			else {
-				aE[I][J] = 0.5*(rho[I  ][J  ] + rho[I+1][J  ])*d_u[i+1][J  ]*AREAe;
-			}
-			
+
+			aE[I][J] = 0.5*(rho[I  ][J  ] + rho[I+1][J  ])*d_u[i+1][J  ]*AREAe;
 			aW[I][J] = 0.5*(rho[I-1][J  ] + rho[I  ][J  ])*d_u[i  ][J  ]*AREAw;
 			aN[I][J] = 0.5*(rho[I  ][J  ] + rho[I  ][J+1])*d_v[I  ][j+1]*AREAn;
-			
-			if (J == 2 && (I <= CHIMNEY_pos + CHIMNEY_wall || I >= CHIMNEY_pos+CHIMNEY_wall+CHIMNEY_w)) {
-			aS[I][J] = 0.;
-			}
-			else {
 			aS[I][J] = 0.5*(rho[I  ][J-1] + rho[I  ][J  ])*d_v[I  ][j  ]*AREAs;
-			}
-			
+
 			aP[I][J] = aE[I][J] + aW[I][J] + aN[I][J] + aS[I][J] - SP[I][J];
 
 			pc[I][J] = 0.;
@@ -920,20 +893,19 @@ void Tcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			aN[I][J] = max3(-Fn, Dn - 0.5*Fn, 0.);
 			aPold    = rho[I][J]*AREAe*AREAn/Dt;
 
-			if (I > 4 && I < 6 && J > 4 && J < 6){
+
+/* ##################################### END ADDED CODE ########################################*/
+			if (I > chim_pos && I < (chim_pos+wall) && J < h ){
 				SP[I][J] = -LARGE;
 				Su[I][J] = LARGE*373.;
 			}
+			
+			if ( I > (chim_pos + wall + wd) && I < (chim_pos + wall + wall + wd) && J < h ) {
+				SP[I][J] = -LARGE;
+				Su[I][J] = LARGE*373.;
+			}
+/* ##################################### END ADDED CODE ########################################*/
 
-//			if (I >= CHIMNEY_pos && I <= CHIMNEY_pos + CHIMNEY_wall && J <= CHIMNEY_h){
-//				SP[I][J] = -LARGE;
-//				Su[I][J] = LARGE*300.;
-//			}
-//
-//			if (I >= CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall && I <= CHIMNEY_pos + CHIMNEY_w + 2*CHIMNEY_wall  && J <= CHIMNEY_h){
-//				SP[I][J] = -LARGE;
-//				Su[I][J] = LARGE*300.;
-//			}
 
 			/* eq. 8.31 with time dependent terms (see also eq. 5.14): */
 
@@ -1010,7 +982,8 @@ void epscoeff(double **aE, double **aW, double **aN, double **aS, double **aP, d
 
 		 /* The source terms */
 
-			if (J==1 ) {
+			if (J==1)//|| J==NPJ) /*################ DELETED TOP WALL ######################*/
+				{
 				SP[I][J] = -LARGE;
 				Su[I][J] = pow(Cmu,0.75)*pow(k[I][J],1.5)/(kappa*0.5*AREAw)*LARGE;
 			}
@@ -1099,7 +1072,8 @@ void kcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			Dn = mut[I  ][J  ]*mut[I  ][J+1]/sigmak/(mut[I  ][J  ]*(y[J+1] - y_v[j+1]) + mut[I  ][J+1]*(y_v[j+1] - y[J  ]))*AREAn;
 
             /* The source terms */
-            if (J == 1 ) {
+            if (J == 1) //|| J == NPJ) /*################ DELETED TOP WALL ######################*/
+				{
 				SP[I][J] = -rho[I][J] * pow(Cmu,0.75) * sqrt(k[I][J]) * uplus[I][J]/(0.5*AREAw) * AREAs * AREAw;
 				Su[I][J] = tw[I][J] * 0.5 * (u[i][J] + u[i+1][J])/(0.5*AREAw) * AREAs * AREAw;
 			}                 
@@ -1119,7 +1093,7 @@ void kcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
             if (J == 1) aS[i][J] = 0;
 			else        aS[i][J] = max3( Fs, Ds + 0.5*Fs, 0.);
             
-			//if (J == NPJ) aN[i][J] = 0;
+			//if (J == NPJ) aN[i][J] = 0; /*################ DELETED TOP WALL ######################*/
 			//else          
 			aN[i][J] = max3(-Fn, Dn - 0.5*Fn, 0.);
             
