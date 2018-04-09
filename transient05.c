@@ -193,10 +193,10 @@ void init(void)
 
 	/* Setting the relaxation parameters */
 
-	relax_u   = 0.8;             /* See eq. 6.36 */
-	relax_v   = relax_u;       /* See eq. 6.37 */
-	relax_pc  = 1.1 - relax_u; /* See eq. 6.33 */
-	relax_T   = 1.0;  /* Relaxation factor for temperature */
+	relax_u   = 0.8;            /* See eq. 6.36 */
+	relax_v   = relax_u;       	/* See eq. 6.37 */
+	relax_pc  = 1.1 - relax_u; 	/* See eq. 6.33 */
+	relax_T   = 1.0;  			/* Relaxation factor for temperature */
 
 } /* init */
 
@@ -231,7 +231,8 @@ void bound(void)
 		}
 		else {
 			T[I][0] = 273.; 			/* bottom wall */
-		}}
+		}
+		}
 		
 	globcont();
 
@@ -550,12 +551,13 @@ void ucoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
                        2./3. * (rho[I][J]*k[I][J] - rho[I-1][J]*k[I-1][J])/(x[I] - x[I-1]);
 			Su[I][j] *= AREAw*AREAs;
 			
-			/* baffle for chimney */
-			if (i == CHIMNEY_pos && J < CHIMNEY_h)
-				SP[i][J] = -LARGE;
-
-			if (i == CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall  && J < CHIMNEY_h)
-				SP[i][J] = -LARGE;
+//			/* baffle for chimney */
+//			if (i == CHIMNEY_pos && J < CHIMNEY_h){
+//				SP[i][J] = -LARGE;
+//			}	
+//			if (i == CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall  && J < CHIMNEY_h){
+//				SP[i][J] = -LARGE;
+//			}
 
 			/* The coefficients (hybrid differencing sheme) */
 
@@ -662,7 +664,15 @@ void vcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 
 			Su[I][j] *= AREAw*AREAs;
 
-
+//			/* baffle for chimney */
+//			if (I == CHIMNEY_pos && j < CHIMNEY_h){
+//				SP[I][j] = LARGE;
+//			}
+//
+//			if (I == CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall  && j < CHIMNEY_h){
+//				SP[I][j] = LARGE;
+//			}
+				
 			/* The coefficients (hybrid differencing scheme) */
 
 			aW[I][j] = max3( Fw, Dw + 0.5*Fw, 0.);
@@ -914,13 +924,15 @@ void Tcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 //				Su[I][J] = LARGE*373.;
 //			}
 
-//			if (I >= CHIMNEY_pos && I <= CHIMNEY_pos + CHIMNEY_wall && J <= CHIMNEY_h)
+//			if (I >= CHIMNEY_pos && I <= CHIMNEY_pos + CHIMNEY_wall && J <= CHIMNEY_h){
 //				SP[I][J] = -LARGE;
 //				Su[I][J] = LARGE*300.;
-
-//			if (I >= CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall && I <= CHIMNEY_pos + CHIMNEY_w + 2*CHIMNEY_wall  && J <= CHIMNEY_h)
+//			}
+//
+//			if (I >= CHIMNEY_pos + CHIMNEY_w + CHIMNEY_wall && I <= CHIMNEY_pos + CHIMNEY_w + 2*CHIMNEY_wall  && J <= CHIMNEY_h){
 //				SP[I][J] = -LARGE;
 //				Su[I][J] = LARGE*300.;
+//			}
 
 			/* eq. 8.31 with time dependent terms (see also eq. 5.14): */
 
