@@ -81,7 +81,6 @@ int main(int argc, char *argv[])
 
 } /* main */
 
-
 /* ################################################################# */
 void grid(void)
 /* ################################################################# */
@@ -163,16 +162,25 @@ void init(void)
 			j = J;
 //			u      [i][J] = U_IN*1.5*(1.-sqr(2.*(y[J]-YMAX/2.)/YMAX));     /* Velocity in x-direction */
 			u      [i][J] = U_IN;     /* Velocity in x-direction */
-			v      [I][j] = 0.;       /* Velocity in y-direction */
+
 			p      [I][J] = 0.;       /* Relative pressure */
 			T      [I][J] = 273.;     /* Temperature */
 			k      [I][J] = 1e-3;     /* k */
 			eps    [I][J] = 1e-4;     /* epsilon */
-			uplus  [I][J] = 1.;                                            /* uplus */
-			yplus1 [I][J] = sqrt(rho[I][J] * u[I][J] / mu[I][J]) * (y[1] - y[0]);   /* yplus1 */
-			yplus2 [I][J] = sqrt(rho[I][J] * u[I][J] / mu[I][J]) * (y[NPJ+1] - y[NPJ]);   /* yplus2 */
-			yplus  [I][J] = 1.;                                            /* yplus*/
-			tw     [I][J] = 5.;                                                /* tw */
+			uplus  [I][J] = 1.;       /* uplus */
+			yplus1 [I][J] = sqrt(rho[I][J] * u[I][J] / mu[I][J]) * (y[1] - y[0]);   	/* yplus1 bottom wall */
+			yplus2 [I][J] = sqrt(rho[I][J] * u[I][J] / mu[I][J]) * (y[NPJ+1] - y[NPJ]); /* yplus2   top wall ###### is removed and overrated #######*/
+			yplus  [I][J] = 1.;       /* yplus*/
+
+	/*######################################### START ADDED CODE ###########################################*/			
+//			v      [I][j] = 0.;       /* Velocity in y-direction */			
+//			vplus  [I][J] = 1.;       /* vplus */
+//			xplus1 [I][J] = sqrt(rho[I][J] * u[I][J] / mu[I][J]) * (x[1] - x[0]);   	/* xplus1 */
+//			xplus  [I][J] = 1.;       /* xplus*/			
+	/*######################################### END ADDED CODE ###########################################*/			
+			
+			
+			tw     [I][J] = 5.;       /* tw */
 			rho    [I][J] = 1.0;      /* Density */
 			mu     [I][J] = 2.E-5;    /* Viscosity */
 			Cp     [I][J] = 1013.;     /* J/(K*kg) Heat capacity - assumed constant for this problem */
@@ -202,25 +210,23 @@ void bound(void)
 {
 /***** Purpose: Specify boundary conditions for a calculation ******/
 	int    I, J, j, i;
-
-	/* Fixed temperature at the upper and lower wall */
-
-	for (J = 0; J <= NPJ + 1; J++) {
-		/* Temperature at the walls in Kelvin */
+	
+	/* velocity at western inlet */
+	for (J = 0; J <= NPJ + 1; J++) {		
 		u[1][J] = U_IN; /* inlet */
 //		u[1][J] = U_IN*1.5*(1.-sqr(2.*(y[J]-YMAX/2.)/YMAX)); /* inlet */
 	} /* for J */
 
+	/* Temperature at the bottom wall  */
 	for (I = 0; I <= NPI + 1; I++) {
-		/* Temperature at the walls in Kelvin */
-		T[I][0] = 273.; /* bottom wall */
+		T[I][0] = 273.; 			/* in Kelvin */
 		//T[I][NPJ+1] = 273.; /* top wall */     /*############# DELETED TOP WALL ########*/
 	} /* for J */
 
 	globcont();
 
-	/* Velocity and temperature gradient at outlet = zero: */
-
+	/* gradients at easern and upper boundry are zero: */
+	/* easern boundry */
 	for (J = 1; J <= NPJ; J++) {
 		j = J;
 		/* Correction factor m_in/m_out is used to satisfy global continuity */
@@ -230,13 +236,12 @@ void bound(void)
 		eps[NPI+1][J] = eps[NPI][J];
 	} /* for J */
 
-
-
 	for (J = 0; J <= NPJ+1; J++) {
 		T[NPI+1][J] = T[NPI][J];
 	} /* for J */
 	
 	/*######################################### START ADDED CODE ###########################################*/
+	/* upper boundry */
 	for (I = 1; I <= NPI; I++) {
 		i = I;
 		u[i][NPJ+1] = u[i][NPJ];
@@ -247,7 +252,20 @@ void bound(void)
 
 	for ( I = 0; I<= NPI+1; I++ ) {
 		T[I][NPJ+1] = T[I][NPJ];
-	} /* for I*/
+	
+//		/* Define bottem inlet flow and wall*/
+//		Dx = XMAX/NPI;
+//		if (I > (chim_pos + wall) && I < (chim_pos + wall + wd)){
+//			v[I][0] = V_IN; 
+//			k[I][0] = 2./3.*sqr(V_IN*Ti); 		
+//			T[I][0] = 500.; 		     
+//			eps[I][0] = pow(Cmu,0.75)*pow(k[I][0],1.5)/(0.09*wd*Dx*0.5);	/* Jet half width */
+//		}
+//		else {
+//			T[I][0] = 273.; 			/* in Kelvin   ####################### DEFINED @ LINE 213#############  */
+//			v[I][0] = 0.;
+//		}
+	} /* for I*/		
 	/*######################################### END ADDED CODE ###########################################*/
 	
 	for (J = 0; J <= NPJ + 1; J++) {
@@ -277,6 +295,12 @@ void globcont(void)
 		m_in  += F_u[1][J]*AREAw;
 		m_out += F_u[NPI][J]*AREAw;
 	} /* for J */
+	/* ########################################### ADD MASS INFLOW ############################################# */
+//	for (I = chim_pos+ wall; I <= chim_pos + wall + wd; I++) {
+//		i = I;
+//		AREAs = x_u[i+1] - x_u[i]; /* See fig. 6.3 */ 
+//		m_in  += F_v[I][1]*AREAs;
+//	} /* for I */
 
 } /* globcont */
 
@@ -518,16 +542,48 @@ void ucoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			mus = 0.25*(mueff[I][J] + mueff[I-1][J] + mueff[I][J-1] + mueff[I-1][J-1]);
 			mun = 0.25*(mueff[I][J] + mueff[I-1][J] + mueff[I][J+1] + mueff[I-1][J+1]);
 
-			if(J == 1 ) //|| J==NPJ) /*################ DELETED TOP WALL ######################*/
-				{
+			/* horizontal near wall flow */
+			
+			/* bottom wall */
+						
+//			if((J == 1) && ((I < chim_pos) && (I > chim_pos + wall + wd + wall))){			
+			if(J == 1) { 				//|| J==NPJ) /*############### DELETED TOP WALL #############*/				
 				if(yplus[I][J] < 11.63)
-					SP[i][J]= -mu[I][J]*AREAs/(0.5*AREAw);
+					SP[i][J]= -mu[I][J]*AREAs/(0.5*AREAw);        /* komt denk ik van formule (3.45) */
 				else
 					SP[i][J]=-rho[I][J] * pow(Cmu, 0.25) * sqrt(k[I][J]) / uplus[I][J] * AREAs;
-			}
+			} /* if bottom wall */
 			else{
 				SP[i][J] = 0.;
-			}
+			} /* else */
+
+			/* baffel tops */
+			
+//			if ((J == h + 1) && ((( I > chim_pos) && (I < chim_pos + wall))||((I > chim_pos+ wall + wd) && (I < chim_pos+ wall + wd + wall)))){
+//				if(yplus[I][J] < 11.63)
+//					SP[i][J]= -mu[I][J]*AREAs/(0.5*AREAw);
+//				else
+//					SP[i][J]=-rho[I][J] * pow(Cmu, 0.25) * sqrt(k[I][J]) / uplus[I][J] * AREAs;
+//			} /* if baffel top */
+//			else{
+//				SP[i][J] = 0.;
+//			} /* else */
+
+			/* vertical near wall flow */  
+			
+			/* baffel sides */		
+				          
+//			if ((J < h) && ((I = chim_pos - 1)||(I = chim_pos + wall + 1 )||(I = chim_pos + wall + wd - 1 )||(I = chim_pos + wall + wd + wall + 1 ))) 
+//				if(xplus[I][J] < 11.63){			
+//					SP[I][j]= -mu[I][J]*AREAe/(0.5*AREAs);
+//				else
+//					SP[I][j]=-rho[I][J] * pow(Cmu, 0.25) * sqrt(k[I][J]) / vplus[I][J] * AREAe;
+//			} /* if baffel side */
+//			else{
+//				SP[I][j] = 0.;
+//			} /* else */
+
+
             
 			Su[i][J] = (mueff[I][J]*dudx[I][J] - mueff[I-1][J]*dudx[I-1][J]) / (x[I] - x[I-1]) + 
 			           (mun        *dvdx[i][j+1] - mus        *dvdx[i][j]) / (y_v[j+1] - y_v[j]) -
@@ -655,7 +711,6 @@ void vcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 				Su[I][j] = 0.;
 			}
 
-
 			if ( I > (chim_pos + wall + wd) && I < (chim_pos + wall + wall + wd) && j < h ) {
 				SP[I][j] = -LARGE;
 				Su[I][j] = 0.;
@@ -772,8 +827,6 @@ void pccoeff(double **aE, double **aW, double **aN, double **aS, double **aP, do
 
 } /* pccoeff */
 
-
-
 /* ################################################################# */
 void storeresults(void)
 /* ################################################################# */
@@ -799,7 +852,6 @@ void storeresults(void)
       }
 
 } /* storeresults */
-
 
 /* ################################################################# */
 void velcorr(void)
@@ -983,7 +1035,7 @@ void epscoeff(double **aE, double **aW, double **aN, double **aS, double **aP, d
 		 /* The source terms */
 
 			if (J==1)//|| J==NPJ) /*################ DELETED TOP WALL ######################*/
-				{
+				{ // 
 				SP[I][J] = -LARGE;
 				Su[I][J] = pow(Cmu,0.75)*pow(k[I][J],1.5)/(kappa*0.5*AREAw)*LARGE;
 			}
@@ -1072,7 +1124,8 @@ void kcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
 			Dn = mut[I  ][J  ]*mut[I  ][J+1]/sigmak/(mut[I  ][J  ]*(y[J+1] - y_v[j+1]) + mut[I  ][J+1]*(y_v[j+1] - y[J  ]))*AREAn;
 
             /* The source terms */
-            if (J == 1) //|| J == NPJ) /*################ DELETED TOP WALL ######################*/
+            if (J == 1 /*|| (J == h + 1 && ((( I > chim_pos) && (I < chim_pos + wall))||((I > chim_pos+ wall + wd) && (I < chim_pos+ wall + wd +wall))))*/) 
+			//|| J == NPJ) /*################ DELETED TOP WALL & ADDED BAFFEL TOPS ######################*/
 				{
 				SP[I][J] = -rho[I][J] * pow(Cmu,0.75) * sqrt(k[I][J]) * uplus[I][J]/(0.5*AREAw) * AREAs * AREAw;
 				Su[I][J] = tw[I][J] * 0.5 * (u[i][J] + u[i+1][J])/(0.5*AREAw) * AREAs * AREAw;
@@ -1092,6 +1145,9 @@ void kcoeff(double **aE, double **aW, double **aN, double **aS, double **aP, dou
             
             if (J == 1) aS[i][J] = 0;
 			else        aS[i][J] = max3( Fs, Ds + 0.5*Fs, 0.);
+            
+            
+            
             
 			//if (J == NPJ) aN[i][J] = 0; /*################ DELETED TOP WALL ######################*/
 			//else          
@@ -1121,10 +1177,12 @@ void calculateuplus(void)
 {
 /***** Purpose: Calculate uplus, yplus and tw  ******/
 
-	int    i,j,I, J;
+	int    i,j,I,J;
 
 	viscosity();
 
+
+/*old bottom wall def.*/
 	for (I = 0; I <= NPI; I++){
 	    i=I;
 			if (yplus1[I][1] < 11.63) {
@@ -1139,7 +1197,10 @@ void calculateuplus(void)
                   yplus [I][1]  = yplus1[I][1];
                   uplus [I][1]  = log(ERough*yplus[I][1])/kappa;
             }/* else */
-            
+    } /* for */ 
+/*old top wall def.*/ 
+   	for (I = 0; I <= NPI; I++){
+	    i=I;          
             if (yplus2[I][NPJ] < 11.63) {
                   tw[I][NPJ]      = mu[I][NPJ]*0.5*(u[i][NPJ]+u[i+1][NPJ])/(y[NPJ+1] - y[NPJ]);
                   yplus2[I][NPJ]  = sqrt(rho[I][NPJ] * fabs(tw[I][NPJ])) * (y[NPJ+1] - y[NPJ]) / mu[I][NPJ];
@@ -1151,9 +1212,86 @@ void calculateuplus(void)
                   yplus2[I][NPJ]  = sqrt(rho[I][NPJ] * fabs(tw[I][NPJ])) * (y[NPJ+1] - y[NPJ]) / mu[I][NPJ];
                   yplus [I][NPJ]  = yplus2[I][NPJ];
                   uplus [I][NPJ]  = log(ERough*yplus[I][NPJ])/kappa;
-            }/* else */
-                  
-           } /* for */
+            }/* else */                  
+    } /* for */
+	/*######################################### START ADDED CODE ###########################################*/
+/*new bottom wall def.*/
+
+/*define horizontal surface area nodes */
+// 	(J = 1 & ((I < chim_pos) || (I > chim_pos + wd + wall +wall))) 			/*bottom wall area*/
+//	|| (J == h + 1 && ((( I > chim_pos) && (I < chim_pos + wall)) ||((I > chim_pos+ wall + wd) && (I < chim_pos+ wall + wd +wall))))		/*baffel top areas*/
+
+// 	for (I = 0; I <= NPI; I++){
+//	    i=I;
+//	    if ((I < chim_pos) || (I > chim_pos + wd + wall +wall)){
+//			if (yplus1[I][1] < 11.63) {
+//	                  tw[I][1]      = mu[I][1]*0.5*(u[i][1]+u[i+1][1])/(y[1] -y[0]);
+//	                  yplus1[I][1]  = sqrt(rho[I][1] * fabs(tw[I][1])) * (y[1] - y[0]) / mu[I][1];
+//	                  yplus[I][1]   = yplus1[I][1];
+//	                  uplus[I][1]   = yplus[I][1];
+//	            }/* if */
+//	            else {
+//	                  tw[I][1]      = rho[I][1]*pow(Cmu,0.25)*sqrt(k[I][1])*0.5*(u[i][1]+u[i+1][1])/uplus[I][1];
+//	                  yplus1[I][1]  = sqrt(rho[I][1] * fabs(tw[I][1])) * (y[1] - y[0]) / mu[I][1];
+//	                  yplus [I][1]  = yplus1[I][1];
+//	                  uplus [I][1]  = log(ERough*yplus[I][1])/kappa;
+//	            }/* else */	
+//		}/* if */
+//		if else ((( I > chim_pos) && (I < chim_pos + wall)) ||((I > chim_pos+ wall + wd) && (I < chim_pos+ wall + wd +wall))){
+//				if (yplus1[I][h + 1] < 11.63) {
+//	                  tw[I][h + 1]      = mu[I][h + 1]*0.5*(u[i][h + 1]+u[i+1][h + 1])/(y[h + 1] -y[h]);
+//	                  yplus1[I][h + 1]  = sqrt(rho[I][h + 1] * fabs(tw[I][1])) * (y[h + 1] - y[h]) / mu[I][1];
+//	                  yplus[I][h + 1]   = yplus1[I][h + 1];
+//	                  uplus[I][h + 1]   = yplus[I][h + 1];
+//	            }/* if */
+//	            else {
+//	                  tw[I][h + 1]      = rho[I][h + 1]*pow(Cmu,0.25)*sqrt(k[I][h + 1])*0.5*(u[i][h + 1]+u[i+1][h + 1])/uplus[I][h + 1];
+//	                  yplus1[I][h + 1]  = sqrt(rho[I][h + 1] * fabs(tw[I][h + 1])) * (y[h + 1] - y[h]) / mu[I][h + 1];
+//	                  yplus [I][h + 1]  = yplus1[I][h + 1];
+//	                  uplus [I][h + 1]  = log(ERough*yplus[I][h + 1])/kappa;
+//	            }/* else */	
+//		}/* if else */		
+//	}/* for */
+ 
+/*new wall sides def.*/
+
+/*define vertical surface area nodes */
+// if (J < h && ((I = chim_pos - 1)||(I =chim_pos + wall + 1 )||(I = chim_pos + wall + wd - 1 )||(I = chim_pos + wall + wd + wall + 1 ))) 
+
+//	for (J = 0 ; J <= h ; J++) {
+//		    j=J;
+//		    /* right sides */
+//		    if ((I =chim_pos + wall + 1 )||(I = chim_pos + wall + wd + wall + 1 )){
+//				if (xplus1[I][J] < 11.63) {
+//		                  tw[I][J]      = mu[I][J]*0.5*(v[I][j]+v[I][j+1])/(x[I] -x[I-1]);
+//		                  xplus1[I][J]  = sqrt(rho[I][J] * fabs(tw[I][J])) * (x[I] - x[I-1]) / mu[I][1];
+//		                  xplus[I][J]   = xplus1[I][J];
+//		                  vplus[I][J]   = xplus[I][J];
+//		            }/* if */
+//		            else {
+//		                  tw[I][J]      = rho[I][J]*pow(Cmu,0.25)*sqrt(k[I][J])*0.5*(v[I][j]+v[I][j+1])/uplus[I][J];
+//		                  xplus1[I][J]  = sqrt(rho[I][J] * fabs(tw[I][J])) * (x[I] - x[I-1]) / mu[I][J];
+//		                  xplus [I][J]  = xplus1[I][J];
+//		                  vplus [I][J]  = log(ERough*xplus[I][J])/kappa;
+//		            }/* else */	
+//			}/* if */	
+//			/* left sides */
+//		    if ((I = chim_pos - 1)||(I = chim_pos + wall + wd - 1 )){
+//				if (xplus1[I][J] < 11.63) {
+//		                  tw[I][J]      = mu[I][J]*0.5*(v[I][j]+v[I][j+1])/(x[I] -x[I+1]);
+//		                  xplus1[I][J]  = sqrt(rho[I][J] * fabs(tw[I][J])) * (x[I] - x[I+1]) / mu[I][1];
+//		                  xplus[I][J]   = xplus1[I][J];
+//		                  vplus[I][J]   = xplus[I][J];
+//		            }/* if */
+//		            else {
+//		                  tw[I][J]      = rho[I][J]*pow(Cmu,0.25)*sqrt(k[I][J])*0.5*(v[I][j]+v[I][j+1])/uplus[I][J];
+//		                  xplus1[I][J]  = sqrt(rho[I][J] * fabs(tw[I][J])) * (x[I] - x[I+1]) / mu[I][J];
+//		                  xplus [I][J]  = xplus1[I][J];
+//		                  vplus [I][J]  = log(ERough*xplus[I][J])/kappa;
+//		            }/* else */	
+//			}/* if */
+//	}/* for */
+	/*######################################### END ADDED CODE ###########################################*/	
 } /* cuplus */
 
 /* ################################################################# */
@@ -1163,13 +1301,12 @@ void viscosity(void)
 /***** Purpose: Calculate the viscosity in the fluid as a function of temperature *****/
 	int   I, J;
 
-	for (I = 0; I <= NPI; I++)
+	for (I = 0; I <= NPI; I++){
 		for (J = 1; J <= NPJ + 1; J++) {
             mut[I][J] = rho[I][J]*Cmu*sqr(k[I][J])/(eps[I][J]+SMALL);
 			mueff[I][J] = mu[I][J] + mut[I][J];
-      } /* for */
-
-
+      	} /* for */
+	}/* for */
 } /* viscosity */
 
 /* ################################################################# */

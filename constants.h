@@ -16,6 +16,7 @@
 #define SMALL      1E-30     /* arbitrary very small value [-] */
 #define P_ATM      101000.   /* athmospheric pressure [Pa] */
 #define U_IN       1.0       /* in flow velocity [m/s] */
+#define V_IN       0.0       /* in flow velocity [m/s] */
 
 #define Cmu        0.09
 #define sigmak       1.
@@ -26,7 +27,7 @@
 #define ERough     9.793
 #define Ti         0.04
 
-#define chim_pos	4
+#define chim_pos	4		/* amount of grid cells  */
 #define wall		3
 #define wd			5
 #define h			15
